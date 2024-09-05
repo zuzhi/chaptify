@@ -9,7 +9,8 @@
     [zuzhi.chaptify.env :refer [defaults]]
     [zuzhi.chaptify.web.handler]
     ;; Routes
-    [zuzhi.chaptify.web.routes.api]))
+    [zuzhi.chaptify.web.routes.api]
+    [zuzhi.chaptify.web.routes.pages]))
 
 
 ;; log uncaught exceptions in threads
