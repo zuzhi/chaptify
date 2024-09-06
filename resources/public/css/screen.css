@@ -1,0 +1,137 @@
+.buttons,
+.footer {
+  color: #828282;
+  font-size: 0.8em;
+}
+
+.button {
+  padding: 0px 0px 0px 5px;
+}
+
+button {
+  background: none;
+  border: none;
+  color: #828282;
+  padding: 0px;
+  font: inherit;
+  font-size: 0.8em;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:hover {
+  text-decoration: underline;
+}
+
+span.done {
+  text-decoration: line-through;
+}
+
+span.skip {
+  color: #828282;
+}
+
+span.skim {
+  color: #828282;
+  text-decoration: line-through;
+}
+
+span.in-progress {
+  font-weight: bold;
+}
+
+span.project {
+  font-weight: bold;
+}
+
+span.project.archived {
+  color: #828282;
+}
+
+.auth-form,
+.howtouse {
+  width: 400px;
+}
+
+.row {
+  display: flex;
+}
+
+.column {
+  flex: 50%;
+  display: flex;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid #828282;
+}
+
+/* Styles for mobile screens */
+@media (max-width: 768px) {
+  .auth-form,
+  .howtouse {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .row {
+    flex-wrap: wrap;
+  }
+  .column {
+    flex: 100%;
+  }
+}
+
+.editor {
+  margin: 16px 0;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+input {
+  border: 1px solid #ccc;
+}
+
+.header {
+  font-family: monospace;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 10px;
+}
+
+.header a {
+  color: #000;
+  text-decoration: none;
+}
+
+.header a.active {
+  text-decoration: underline;
+}
+
+.header a:hover {
+  text-decoration: underline;
+}
+
+.header .product-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.product-name {
+  font-family: monospace;
+}
+
+#error-page {
+  font-family: monospace;
+  color: #828282;
+}
