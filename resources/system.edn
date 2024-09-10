@@ -34,9 +34,9 @@
                                      :content-types true
                                      :default-charset "utf-8"}}}
 
- :reitit.routes/api
- {:base-path "/api"
-  :env #ig/ref :system/env}
+ ;; :reitit.routes/api
+ ;; {:base-path "/api"
+ ;;  :env #ig/ref :system/env}
 
  :router/routes
  {:routes #ig/refset :reitit/routes}

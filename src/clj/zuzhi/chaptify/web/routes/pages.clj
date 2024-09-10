@@ -24,7 +24,7 @@
 ;; Routes
 (defn page-routes
   [_opts]
-  [["/" {:get home}]])
+  [["/**" {:get home}]])
 
 
 (def route-data

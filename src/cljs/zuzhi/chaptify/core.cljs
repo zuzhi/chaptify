@@ -3,14 +3,9 @@
     ["@instantdb/react" :as instantdb]
     [reagent.core :as r]
     [reagent.dom.client :as rdc]
-    [reitit.core :as rt]
-    [reitit.frontend.easy :as rt-easy]))
-
-
-(def session (r/atom {:page :home :username "zuzhi" :tab nil}))
-
-(def projects (r/atom [{:id 1 :name "fullstackopen" :status "normal" :progress 0}]))
-(def archives (r/atom [{:id 2 :name "educated" :status "archived" :progress 100}]))
+    [reitit.frontend :as rt]
+    [reitit.frontend.easy :as rt-easy]
+    [zuzhi.chaptify.togglable :refer [togglable]]))
 
 
 ;; ID for app: chaptify
@@ -24,37 +19,41 @@
 ;; -------------------------
 ;; Views
 
-(defn root
+(def app-state (r/atom {:current-view-name nil :current-view nil :route-params nil :query-params nil}))
+
+
+(defn base-view
   []
-  (let [{:keys [page username tab]} @session]
-    (js/console.log @session)
+  (let [current-view (:current-view @app-state)
+        route-params (:route-params @app-state)
+        query-params (:query-params @app-state)]
+    (if current-view
+      [current-view route-params query-params]
+      [:div "Page not found."])))
+
+
+(defn nav
+  []
+  (let [{:keys [current-view-name query-params]} @app-state
+        username "zuzhi"
+
+        tab (:tab query-params)]
     [:div.header
-     [:a.product-name {:href (rt-easy/href :home)
-                       :class (when (and (= page :home) (= tab nil)) "active")}
+     [:a.product-name {:href (rt-easy/href ::home)
+                       :class (when (and (= current-view-name ::home) (= tab nil)) "active")}
       [:b "chaptify"]]
-     [:a {:href (rt-easy/href :profile {:username username} {:tab "projects"})
+     [:a {:href (rt-easy/href ::profile {:username username} {:tab "projects"})
           :style {:padding-left 10}
-          :class (when (and (= page :profile) (= tab "projects")) "active")}
+          :class (when (and (= current-view-name ::profile) (= tab "projects")) "active")}
       "projects"]
-     [:a {:href (rt-easy/href :profile {:username username} {:tab "archives"})
+     [:a {:href (rt-easy/href ::profile {:username username} {:tab "archives"})
           :style {:padding-left 10}
-          :class (when (and (= page :profile) (= tab "archives")) "active")}
+          :class (when (and (= current-view-name ::profile) (= tab "archives")) "active")}
       "archives"]
-     [:a {:href (rt-easy/href :profile {:username username}),
+     [:a {:href (rt-easy/href ::profile {:username username}),
           :style {:padding-left 10}
-          :class (when (and (= page :profile) (= tab nil)) "active")}
+          :class (when (and (= current-view-name ::profile) (= tab nil)) "active")}
       "profile"]]))
-
-
-(defn dashboard
-  []
-  [:div
-   [root]
-   (let [projects-count (count @projects)
-         archives-count (count @archives)]
-     [:div
-      [:p "you have " (+ projects-count archives-count) " projects. "
-       projects-count " active, " archives-count " archived."]])])
 
 
 (defn instant-dashboard
@@ -73,29 +72,47 @@
       [:div (str "Error fetching data: " (.-message error))]
 
       :else
-      [:p "you have " (+ projects-count archives-count) " projects. "
-       projects-count " active, " archives-count " archived."])))
+      [:div
+       [:p "you have " (+ projects-count archives-count) " projects. "
+        projects-count " active, " archives-count " archived."]])))
 
 
 (defn fn-instant-dashboard
   []
   [:div
-   [root]
+   [nav]
    [:f> instant-dashboard]])
 
 
-(defn projects-page
-  [projects]
-  (js/console.log projects)
-  [:ul (for [p projects] [:li {:key (:id p)} (:name p)])])
+(defn on-submit
+  [value]
+  (fn [event]
+    (.preventDefault event)
+
+    (js/console.log "Submitted project name: " @value)
+
+    (reset! value "")))
+
+
+(defn new-project-form
+  []
+  (r/with-let [project-name (r/atom "")]
+              [:form {:on-submit (on-submit project-name)}
+               [:input {:type "text"
+                        :value @project-name
+                        :on-change #(reset! project-name (-> % .-target .-value))}]
+               [:button {:type "submit" :style {:padding-left 5}} "save"]]))
 
 
 (defn instant-projects-page
   []
-  (let [query {:projects {:$ {:where {:status 'normal}}}}
+  (let [query {:projects {:$ {:where {:status "normal"}}}}
         result (.useQuery db (clj->js query))
         {:keys [isLoading error data]} (js->clj result :keywordize-keys true)
-        projects (or (:projects data) [])]
+        projects (or (:projects data) [])
+
+        visibility-ref (r/atom nil)]
+
     (cond
       isLoading
       [:div "loading"]
@@ -104,19 +121,19 @@
       [:div (str "Error fetching data: " (.-message error))]
 
       :else
-      [:ul
-       (for [p projects] [:li {:key (:id p)} (:name p)])])))
-
-
-(defn archives-page
-  [archives]
-  (js/console.log archives)
-  [:ul (for [p archives] [:li {:key (:id p)} (:name p)])])
+      [:div
+       [togglable
+        {:buttonLabel "new project"
+         :ref visibility-ref}
+        ^{:key "new-project-form"} [new-project-form]]
+       [:ul
+        (for [p projects]
+          [:li {:key (:id p)} (:name p)])]])))
 
 
 (defn instant-archives-page
   []
-  (let [query {:projects {:$ {:where {:status 'archived}}}}
+  (let [query {:projects {:$ {:where {:status "archived"}}}}
         result (.useQuery db (clj->js query))
         {:keys [isLoading error data]} (js->clj result :keywordize-keys true)
         projects (or (:projects data) [])]
@@ -133,48 +150,49 @@
 
 
 (defn profile
-  [{:keys [username tab]}]
+  [username tab]
   [:div
-   [root]
+   [nav]
    (cond
      (= tab "projects") [:f> instant-projects-page]
      (= tab "archives") [:f> instant-archives-page]
      :else [:div [:p "hi, " username]])])
 
 
-(def pages
-  {:home #'fn-instant-dashboard
-   :profile #'profile})
-
-
-(defn page
-  []
-  (let [{:keys [page username tab]} @session]
-    [(pages page) {:username username :tab tab}]))
+(defn profile-page
+  [{:keys [username]} {:keys [tab]}]
+  [profile username tab])
 
 
 ;; -------------------------
 ;; Routing
 
-(defn on-navigate
-  [matched-route]
-  (let [route-name (-> matched-route :data :name)
-        username (-> matched-route :path-params :username)
-        tab (-> matched-route :query-params :tab)]
-    (swap! session assoc :page route-name :tab tab)
-    (when username
-      (swap! session assoc :username username))))
+(def routes
+  [["/" {:name ::home
+         :view fn-instant-dashboard}]
+   ["/:username" {:name ::profile
+                  :view profile-page}]])
 
 
-;; Define the routes
 (def router
-  (rt/router
-    [["/" {:name :home}]
-     ["/:username" {:name :profile}]]))
+  (rt/router routes))
 
 
-;; Initialize router and handle navigation events
-(defn init-routes!
+(defn on-navigate
+  [match _]
+  (js/console.log match)
+  (let [view-name (:name (:data match))
+        view (:view (:data match))
+        route-params (:path-params match)
+        query-params (:query-params match)]
+    (swap! app-state assoc
+           :current-view-name view-name
+           :current-view view
+           :route-params route-params
+           :query-params query-params)))
+
+
+(defn init-router
   []
   (rt-easy/start!
     router
@@ -185,15 +203,18 @@
 ;; -------------------------
 ;; Initialize app
 
-(defonce app (rdc/create-root (js/document.getElementById "app")))
+(defonce root (rdc/create-root (js/document.getElementById "root")))
 
 
 (defn ^:dev/after-load mount-root
   []
-  (.render app (r/as-element [page])))
+  (js/console.log @app-state)
+  (when (= (:current-view-name @app-state) nil)
+    (init-router)) ;; hot-reload reset app-state, init-router again
+  (rdc/render root [base-view]))
 
 
 (defn ^:export ^:dev/once init!
   []
-  (init-routes!)
+  (init-router)
   (mount-root))
