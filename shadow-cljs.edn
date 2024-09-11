@@ -9,6 +9,9 @@
  :builds       {:app {:target     :browser
                       :output-dir "target/classes/cljsbuild/public/js"
                       :asset-path "/js"
+                      :build-hooks
+                      [(shadow.html/copy-file "resources/html/home.html" "target/classes/cljsbuild/public/index.html")
+                       (shadow.html/copy-file "resources/public/css/screen.css" "target/classes/cljsbuild/public/css/screen.css")]
                       :modules    {:app {:entries [zuzhi.chaptify.core]
                                          :init-fn zuzhi.chaptify.core/init!}}
                       :devtools   {:after-load zuzhi.chaptify.core/mount-root}}}}
