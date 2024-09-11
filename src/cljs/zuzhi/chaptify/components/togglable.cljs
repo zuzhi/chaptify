@@ -1,9 +1,9 @@
-(ns zuzhi.chaptify.togglable
+(ns zuzhi.chaptify.components.togglable
   (:require
     [reagent.core :as r]))
 
 
-(defn togglable
+(defn Togglable
   [{:keys [buttonLabel ref]} & children]
   (let [visible (r/atom false)
         toggle-visibility #(swap! visible not)
