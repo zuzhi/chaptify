@@ -1,10 +1,20 @@
 (ns build
   (:require [clojure.string :as string]
-            [clojure.tools.build.api :as b] 
-            [babashka.fs :refer [copy-tree]]
+            [clojure.tools.build.api :as b]
+            [babashka.fs :refer [copy-tree delete-tree]]
             [babashka.process :refer [shell]]))
 
- (defn build-cljs [] (println "npx shadow-cljs release app...") (let [{:keys [exit], :as s} (shell "npx shadow-cljs release app")] (when-not (zero? exit) (throw (ex-info "could not compile cljs" s))) (copy-tree "target/classes/cljsbuild/public" "target/classes/public")))
+(defn build-cljs
+  []
+  (println "npx shadow-cljs release app...")
+  (let [{:keys [exit], :as s} (shell "npx shadow-cljs release app")]
+    (when-not (zero? exit)
+      (throw (ex-info "could not compile cljs" s)))
+    (let [dest "target/classes/public"]
+      (when (fs/exists? dest)
+        (println (str "removing existing directory: " dest))
+        (delete-tree dest))
+      (copy-tree "target/classes/cljsbuild/public" dest))))
 
 (def lib 'zuzhi/chaptify)
 (def main-cls (string/join "." (filter some? [(namespace lib) (name lib) "core"])))
