@@ -46,21 +46,12 @@
       (.transact db (.link parent parent-link-data)))))
 
 
-(defn update-project-progress
-  [project-id progress]
-  (let [project (aget (.-projects tx) project-id)
-        update-data (clj->js {:progress progress})]
-    (when project
-      (.transact db (.update project update-data)))))
-
-
 (defn update-topic-status
-  [topic-id status project-id]
+  [topic-id status]
   (let [topic (aget (.-topics tx) topic-id)
         update-data (clj->js {:status status})]
     (when topic
-      (.transact db (.update topic update-data))
-      (update-project-progress project-id 100))))
+      (.transact db (.update topic update-data)))))
 
 
 ;; projects

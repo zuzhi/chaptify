@@ -53,15 +53,15 @@
      [:button {:style {:padding-left 8}
                :on-click #(delete-topic id children)} "delete"]
      [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "pending" project-id)} "pending"]
+               :on-click #(update-topic-status id "pending")} "pending"]
      [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "in progress" project-id)} "in progress"]
+               :on-click #(update-topic-status id "in progress")} "in progress"]
      [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "done" project-id)} "done"]
+               :on-click #(update-topic-status id "done")} "done"]
      [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "skip" project-id)} "skip"]
+               :on-click #(update-topic-status id "skip")} "skip"]
      [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "skim" project-id)} "skim"]
+               :on-click #(update-topic-status id "skim")} "skim"]
      [Togglable
       {:buttonLabel "new topic"
        :ref visibility-ref}
@@ -69,28 +69,6 @@
      [:ul
       (for [t children]
         ^{:key (:id t)} [TopicLine t project-id])]]))
-
-
-(defn ProjectLine
-  [{:keys [id name progress topics] :as project}]
-  (let [visibility-ref (r/atom nil)]
-    [:li {:key id}
-     [:span.project (str name " " progress "%")]
-     ;; [Togglable
-     ;; {:buttonLabel "rename"
-     ;;  :ref visibility-ref}
-     ;; ^{:key "edit-project-form"} [EditProjectForm id name]]
-     [:button {:style {:padding-left 8}
-               :on-click #(delete-project id topics)} "delete"]
-     [:button {:style {:padding-left 8}
-               :on-click #(archive-project id)} "archive"]
-     [Togglable
-      {:buttonLabel "new topic"
-       :ref visibility-ref}
-      ^{:key "new-topic-form"} [NewTopicForm id]]
-     [:ul
-      (for [t topics]
-        ^{:key (:id t)} [TopicLine t id])]]))
 
 
 (defn has-matching-parent?
@@ -118,18 +96,38 @@
                (transform-topic t sub-topics))}))
 
 
-(defn transform-projects
-  [projects]
-  (for [p projects]
-    (transform-project p)))
+(defn ProjectLine
+  [{:keys [id name topics] :as project}]
+  (let [visibility-ref (r/atom nil)
+        finished-topics (filter #(or (= (:status %) "done") (= (:status %) "skip") (= (:status %) "skim")) topics)
+        progress (int (* (/ (count finished-topics) (count topics)) 100))
+        transformed (transform-project project)
+        direct-topics (:topics transformed)]
+    [:li {:key id}
+     [:span.project (str name " " progress "%")]
+     ;; FIXME toggle cause layout issue
+     ;; [Togglable
+     ;; {:buttonLabel "rename"
+     ;;  :ref visibility-ref}
+     ;; ^{:key "edit-project-form"} [EditProjectForm id name]]
+     [:button {:style {:padding-left 8}
+               :on-click #(delete-project id topics)} "delete"]
+     [:button {:style {:padding-left 8}
+               :on-click #(archive-project id)} "archive"]
+     [Togglable
+      {:buttonLabel "new topic"
+       :ref visibility-ref}
+      ^{:key "new-topic-form"} [NewTopicForm id]]
+     [:ul
+      (for [t direct-topics]
+        ^{:key (:id t)} [TopicLine t id])]]))
 
 
 (defn Projects
   [projects]
-  (let [transformed (transform-projects projects)]
-    [:ul
-     (for [p transformed]
-       ^{:key (:id p)} [ProjectLine p])]))
+  [:ul
+   (for [p projects]
+     ^{:key (:id p)} [ProjectLine p])])
 
 
 (defn ProjectsPage
