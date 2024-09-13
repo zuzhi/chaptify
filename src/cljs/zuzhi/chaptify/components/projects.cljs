@@ -1,12 +1,13 @@
 (ns zuzhi.chaptify.components.projects
   (:require
-    [clojure.string :as str]
-    [reagent.core :as r]
-    [zuzhi.chaptify.components.togglable :refer [Togglable]]
-    [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
-    [zuzhi.chaptify.db :refer [add-project archive-project delete-project
-                               delete-topic get-projects rename-project
-                               update-topic-status]]))
+   [clojure.string :as str]
+   [reagent.core :as r]
+   [zuzhi.chaptify.components.togglable :refer [Togglable]]
+   [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
+   [zuzhi.chaptify.db :refer [add-project archive-project delete-project
+                              delete-topic get-projects rename-project
+                              update-topic-status]]
+   [zuzhi.chaptify.util :refer [transform-project]]))
 
 
 (defn handle-submit
@@ -70,31 +71,6 @@
      [:ul
       (for [t children]
         ^{:key (:id t)} [TopicLine t project-id])]]))
-
-
-(defn has-matching-parent?
-  [topic-id sub-topic]
-  (some #(= (:id %) topic-id) (:parent sub-topic)))
-
-
-(defn transform-topic
-  [topic sub-topics]
-  (let [children (filter #(has-matching-parent? (:id topic) %) sub-topics)]
-    (assoc topic :children (for [t children]
-                             (transform-topic t sub-topics)))))
-
-
-(defn transform-project
-  [{:keys [id name status progress created_at topics]}]
-  (let [direct-topics (filter #(= (:parent %) []) topics)
-        sub-topics (filter #(not= (:parent %) []) topics)]
-    {:id id
-     :name name
-     :status status
-     :progress progress
-     :created_at created_at
-     :topics (for [t direct-topics]
-               (transform-topic t sub-topics))}))
 
 
 (defn ProjectLine
