@@ -4,11 +4,12 @@
 
 
 (defn Togglable
-  [{:keys [buttonLabel ref]} & children]
+  [{:keys [buttonLabel ref on-show]} & children]
   (let [visible (r/atom false)
         toggle-visibility #(swap! visible not)
         set-visible (fn [v]
-                      (reset! visible v))]
+                      (reset! visible v)
+                      (when (and v on-show) (js/setTimeout on-show 50)))]
 
     (when ref
       (reset! ref {:toggle-visibility toggle-visibility

@@ -18,13 +18,11 @@
 
 
 (defn handle-edit-submit
-  [id name ref]
+  [id name]
   (fn [event]
     (.preventDefault event)
     (rename-project id @name)
-    (reset! name "")
-    (when-let [set-visible (:set-visible @ref)]
-      (set-visible false))))
+    (reset! name "")))
 
 
 (defn NewProjectForm
@@ -38,11 +36,12 @@
 
 
 (defn EditProjectForm
-  [{:keys [ref]} {:keys [id name] :as project}]
+  [{:keys [id name] :as project} input-ref]
   (r/with-let [project-name (r/atom name)]
-              [:form {:on-submit (handle-edit-submit id project-name ref)}
+              [:form {:on-submit (handle-edit-submit id project-name)}
                [:input {:type "text"
                         :value @project-name
+                        :ref #(reset! input-ref %)
                         :on-change #(reset! project-name (-> % .-target .-value))}]
                [:button {:type "submit" :style {:padding-left 8}} "save"]]))
 
@@ -101,6 +100,7 @@
 (defn ProjectLine
   [{:keys [id name topics] :as project}]
   (let [edit-form-visibility-ref (r/atom nil)
+        input-ref (r/atom nil)
         visibility-ref (r/atom nil)
         finished-topics (filter #(or (= (:status %) "done")
                                      (= (:status %) "skip")
@@ -109,34 +109,33 @@
         progress (int (* (/ (count finished-topics) (count topics)) 100))
         transformed (transform-project project)
         direct-topics (:topics transformed)]
-    [:li {:key id}
-     [:span.project (str name " " progress "%")]
-     [:button {:style {:padding-left 8}
-               :on-click #(if-let [set-visible (:set-visible @edit-form-visibility-ref)]
-                            (set-visible true)
-                            (js/console.log "ref" @edit-form-visibility-ref))} "rename"] ;; FIXME ref becomes null
-     [:button {:style {:padding-left 8}
-               :on-click #(delete-project project)} "delete"]
-     [:button {:style {:padding-left 8}
-               :on-click #(archive-project id)} "archive"]
-     [Togglable
-      {:ref edit-form-visibility-ref}
-      ^{:key "edit-project-form"} [EditProjectForm
-                                   {:ref edit-form-visibility-ref}
-                                   project]]
-     [Togglable {:buttonLabel "new topic"
-                 :ref visibility-ref}
-      ^{:key "new-topic-form"} [NewTopicForm id]]
-     [:ul
-      (for [t direct-topics]
-        ^{:key (:id t)} [TopicLine t id])]]))
+    (fn []
+      [:li {:key id}
+       [:span.project (str name " " progress "%")]
+       [:button {:style {:padding-left 8}
+                 :on-click #(when-let [set-visible (:set-visible @edit-form-visibility-ref)]
+                              (set-visible true))} "rename"]
+       [:button {:style {:padding-left 8}
+                 :on-click #(delete-project project)} "delete"]
+       [:button {:style {:padding-left 8}
+                 :on-click #(archive-project id)} "archive"]
+       [Togglable {:ref edit-form-visibility-ref
+                   :on-show #(when @input-ref (.focus @input-ref))}
+        ^{:key "edit-project-form"} [EditProjectForm project input-ref]]
+       [Togglable {:buttonLabel "new topic"
+                   :ref visibility-ref}
+        ^{:key "new-topic-form"} [NewTopicForm id]]
+       [:ul
+        (for [t direct-topics]
+          ^{:key (:id t)} [TopicLine t id])]])))
 
 
 (defn Projects
   [projects]
   [:ul
    (for [p projects]
-     ^{:key (:id p)} [ProjectLine p])])
+     (let [project-line (fn [] [ProjectLine p])]
+       ^{:key (:id p)} [project-line]))])
 
 
 (defn ProjectsPage
