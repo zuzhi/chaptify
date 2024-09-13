@@ -18,11 +18,13 @@
 
 
 (defn handle-edit-submit
-  [id name]
+  [id name ref]
   (fn [event]
     (.preventDefault event)
     (rename-project id @name)
-    (reset! name "")))
+    (reset! name "")
+    (when-let [set-visible (:set-visible @ref)]
+      (set-visible false))))
 
 
 (defn NewProjectForm
@@ -36,13 +38,13 @@
 
 
 (defn EditProjectForm
-  [project-id name]
+  [{:keys [ref]} {:keys [id name] :as project}]
   (r/with-let [project-name (r/atom name)]
-              [:form {:on-submit (handle-edit-submit project-id project-name)}
+              [:form {:on-submit (handle-edit-submit id project-name ref)}
                [:input {:type "text"
                         :value @project-name
                         :on-change #(reset! project-name (-> % .-target .-value))}]
-               [:button {:type "submit" :style {:padding-left 5}} "save"]]))
+               [:button {:type "submit" :style {:padding-left 8}} "save"]]))
 
 
 (defn TopicLine
@@ -98,25 +100,32 @@
 
 (defn ProjectLine
   [{:keys [id name topics] :as project}]
-  (let [visibility-ref (r/atom nil)
-        finished-topics (filter #(or (= (:status %) "done") (= (:status %) "skip") (= (:status %) "skim")) topics)
+  (let [edit-form-visibility-ref (r/atom nil)
+        visibility-ref (r/atom nil)
+        finished-topics (filter #(or (= (:status %) "done")
+                                     (= (:status %) "skip")
+                                     (= (:status %) "skim"))
+                                topics)
         progress (int (* (/ (count finished-topics) (count topics)) 100))
         transformed (transform-project project)
         direct-topics (:topics transformed)]
     [:li {:key id}
      [:span.project (str name " " progress "%")]
-     ;; FIXME toggle cause layout issue
-     ;; [Togglable
-     ;; {:buttonLabel "rename"
-     ;;  :ref visibility-ref}
-     ;; ^{:key "edit-project-form"} [EditProjectForm id name]]
      [:button {:style {:padding-left 8}
-               :on-click #(delete-project id topics)} "delete"]
+               :on-click #(if-let [set-visible (:set-visible @edit-form-visibility-ref)]
+                            (set-visible true)
+                            (js/console.log "ref" @edit-form-visibility-ref))} "rename"] ;; FIXME ref becomes null
+     [:button {:style {:padding-left 8}
+               :on-click #(delete-project project)} "delete"]
      [:button {:style {:padding-left 8}
                :on-click #(archive-project id)} "archive"]
      [Togglable
-      {:buttonLabel "new topic"
-       :ref visibility-ref}
+      {:ref edit-form-visibility-ref}
+      ^{:key "edit-project-form"} [EditProjectForm
+                                   {:ref edit-form-visibility-ref}
+                                   project]]
+     [Togglable {:buttonLabel "new topic"
+                 :ref visibility-ref}
       ^{:key "new-topic-form"} [NewTopicForm id]]
      [:ul
       (for [t direct-topics]

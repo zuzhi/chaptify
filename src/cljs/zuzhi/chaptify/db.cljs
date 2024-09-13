@@ -101,8 +101,8 @@
 
 
 (defn delete-project
-  [project-id topics]
-  (let [project (aget (.-projects tx) project-id)]
+  [{:keys [id topics]}]
+  (let [project (aget (.-projects tx) id)]
     (when project
       (.transact db (.delete project))
       (doseq [t topics]

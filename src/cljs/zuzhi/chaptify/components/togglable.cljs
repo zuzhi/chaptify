@@ -7,11 +7,12 @@
   [{:keys [buttonLabel ref]} & children]
   (let [visible (r/atom false)
         toggle-visibility #(swap! visible not)
-        set-visible (fn [v] (reset! visible v))]
+        set-visible (fn [v]
+                      (reset! visible v))]
 
     (when ref
-      (reset! ref {:toggleVisibility toggle-visibility
-                   :setVisible set-visible}))
+      (reset! ref {:toggle-visibility toggle-visibility
+                   :set-visible set-visible}))
 
     (fn []
       [:div

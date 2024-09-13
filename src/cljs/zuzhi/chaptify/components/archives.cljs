@@ -18,8 +18,9 @@
 
       :else
       [:ul
-       (for [p projects] [:li {:key (:id p)} (:name p)
-                          [:button {:style {:padding-left 8}
-                                    :on-click #(delete-project (:id p) (:topics p))} "delete"]
-                          [:button {:style {:padding-left 8}
-                                    :on-click #(unarchive-project (:id p))} "unarchive"]])])))
+       (for [p projects]
+         [:li {:key (:id p)} (:name p)
+          [:button {:style {:padding-left 8}
+                    :on-click #(delete-project p)} "delete"]
+          [:button {:style {:padding-left 8}
+                    :on-click #(unarchive-project (:id p))} "unarchive"]])])))
