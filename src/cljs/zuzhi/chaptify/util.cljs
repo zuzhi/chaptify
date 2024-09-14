@@ -1,5 +1,6 @@
 (ns zuzhi.chaptify.util)
 
+
 (defn has-matching-parent?
   [topic-id sub-topic]
   (some #(= (:id %) topic-id) (:parent sub-topic)))
@@ -11,14 +12,14 @@
     (assoc topic :children (for [t children]
                              (transform-topic t sub-topics)))))
 
+
 (defn transform-project
-  [{:keys [id name status progress created_at topics]}]
+  [{:keys [id name status createdAt topics]}]
   (let [direct-topics (filter #(= (:parent %) []) topics)
         sub-topics (filter #(not= (:parent %) []) topics)]
     {:id id
      :name name
      :status status
-     :progress progress
-     :created_at created_at
+     :createdAt createdAt
      :topics (for [t direct-topics]
                (transform-topic t sub-topics))}))

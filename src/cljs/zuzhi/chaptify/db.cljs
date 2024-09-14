@@ -20,22 +20,27 @@
 
 
 (defn add-topic
-  [project-id name]
+  [name project-id user-id]
   (let [id (id)
         topic (aget (.-topics tx) id)
-        update-data (clj->js {:name name :status "pending"})
+        update-data (clj->js {:name name
+                              :status "pending"
+                              :creatorId user-id})
         project (aget (.-projects tx) project-id)
         link-data (clj->js {:topics id})]
     (when topic
+      (js/console.log update-data)
       (.transact db (.update topic update-data))
       (.transact db (.link project link-data)))))
 
 
 (defn add-sub-topic
-  [project-id parent-id name]
+  [project-id parent-id name user-id]
   (let [id (id)
         topic (aget (.-topics tx) id)
-        update-data (clj->js {:name name :status "pending"})
+        update-data (clj->js {:name name
+                              :status "pending"
+                              :creatorId user-id})
         project (aget (.-projects tx) project-id)
         project-link-data (clj->js {:topics id})
         parent (aget (.-topics tx) parent-id)
@@ -65,20 +70,24 @@
 (defn get-projects
   ([] (get-projects "normal"))
   ([status] (get-projects status false))
-  ([status with-topics?] (let [query {:projects (cond-> {:$ {:where {:status status}}}
-                                                  ;; with-topics? (assoc :topics (build-nested-children 10)))}
-                                                  with-topics? (assoc :topics {:parent {}}))}
-                               result (.useQuery db (clj->js query))]
-                           (js/console.log "query:" query)
-                           result)))
+  ([status with-topics?]
+   (let [query {:projects (cond-> {:$ {:where {:status status}}}
+                            ;; with-topics? (assoc :topics (build-nested-children 10)))}
+                            with-topics? (assoc :topics {:parent {}}))}
+         result (.useQuery db (clj->js query))]
+     result)))
 
 
 (defn add-project
-  [name]
+  [name user-id]
   (let [id (id)
         project (aget (.-projects tx) id)
-        update-data (clj->js {:name name :status "normal" :progress 0 :created_at (.now js/Date)})]
+        update-data (clj->js {:name name
+                              :status "normal"
+                              :createdAt (.now js/Date)
+                              :creatorId user-id})]
     (when project
+      (js/console.log update-data)
       (.transact db (.update project update-data)))))
 
 

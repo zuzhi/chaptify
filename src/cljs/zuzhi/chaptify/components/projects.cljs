@@ -1,6 +1,7 @@
 (ns zuzhi.chaptify.components.projects
   (:require
    [clojure.string :as str]
+   [re-frame.core :as rf]
    [reagent.core :as r]
    [zuzhi.chaptify.components.togglable :refer [Togglable]]
    [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
@@ -10,12 +11,12 @@
    [zuzhi.chaptify.util :refer [transform-project]]))
 
 
-(defn handle-submit
-  [value]
+(defn handle-project-submit
+  [name user-id]
   (fn [event]
     (.preventDefault event)
-    (add-project @value)
-    (reset! value "")))
+    (add-project @name user-id)
+    (reset! name "")))
 
 
 (defn handle-edit-submit
@@ -28,23 +29,28 @@
 
 (defn NewProjectForm
   []
-  (r/with-let [project-name (r/atom "")]
-              [:form {:on-submit (handle-submit project-name)}
-               [:input {:type "text"
-                        :value @project-name
-                        :on-change #(reset! project-name (-> % .-target .-value))}]
-               [:button {:type "submit" :style {:padding-left 5}} "save"]]))
+  (let [project-name (r/atom "")
+        user (rf/subscribe [:user])
+        user-id (:id @user)]
+    (fn []
+      ;; (rf/dispatch [:set-projects projects])
+      [:form {:on-submit (handle-project-submit project-name user-id)}
+       [:input {:type "text"
+                :value @project-name
+                :on-change #(reset! project-name (-> % .-target .-value))}]
+       [:button {:type "submit" :style {:padding-left 5}} "save"]])))
 
 
 (defn EditProjectForm
-  [{:keys [id name] :as project} input-ref]
-  (r/with-let [project-name (r/atom name)]
-              [:form {:on-submit (handle-edit-submit id project-name)}
-               [:input {:type "text"
-                        :value @project-name
-                        :ref #(reset! input-ref %)
-                        :on-change #(reset! project-name (-> % .-target .-value))}]
-               [:button {:type "submit" :style {:padding-left 8}} "save"]]))
+  [{:keys [id name]} input-ref]
+  (let [project-name (r/atom name)]
+    (fn []
+      [:form {:on-submit (handle-edit-submit id project-name)}
+       [:input {:type "text"
+                :value @project-name
+                :ref #(reset! input-ref %)
+                :on-change #(reset! project-name (-> % .-target .-value))}]
+       [:button {:type "submit" :style {:padding-left 8}} "save"]])))
 
 
 (defn TopicLine
@@ -97,7 +103,8 @@
                  :on-click #(archive-project id)} "archive"]
        [Togglable {:ref edit-form-visibility-ref
                    :on-show #(when @input-ref (.focus @input-ref))}
-        ^{:key "edit-project-form"} [EditProjectForm project input-ref]]
+        ^{:key "edit-project-form"}
+        [EditProjectForm project input-ref]]
        [Togglable {:buttonLabel "new topic"
                    :ref visibility-ref}
         ^{:key "new-topic-form"} [NewTopicForm id]]

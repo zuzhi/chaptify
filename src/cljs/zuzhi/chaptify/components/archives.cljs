@@ -1,8 +1,9 @@
 (ns zuzhi.chaptify.components.archives
   (:require
-   [clojure.string :as str]
-   [zuzhi.chaptify.db :refer [delete-project get-projects unarchive-project]]
-   [zuzhi.chaptify.util :refer [transform-project]]))
+    [clojure.string :as str]
+    [zuzhi.chaptify.db :refer [delete-project get-projects unarchive-project]]
+    [zuzhi.chaptify.util :refer [transform-project]]))
+
 
 (defn TopicLine
   [{:keys [id name status children] :as parent} project-id]
@@ -39,7 +40,6 @@
   (let [result (get-projects "archived" true)
         {:keys [isLoading error data]} (js->clj result :keywordize-keys true)
         projects (or (:projects data) [])]
-    (js/console.log projects)
     (cond
       isLoading
       [:div "loading"]
