@@ -97,7 +97,12 @@
      [:span {:style {:font-size ".8em" :color "#828282"}} (str username " |")]
      [:button {:style {:padding-left 8}
                :on-click #(-> (.-auth db)
-                              (.signOut))}
+                              (.signOut)
+                              (.then (fn []
+                                       (swap! app-state assoc
+                                              :user-email nil
+                                              :user-id nil)
+                                       (rt-easy/push-state ::login))))}
       "logout"]]))
 
 
@@ -150,7 +155,9 @@
                  :type "email"
                  :value @email
                  :on-change #(reset! email (-> % .-target .-value))}]
-        [:button {:type "submit"} "send code"]]])))
+        [:button {:type "submit"
+                  :style {:padding-left 8}}
+         "send code"]]])))
 
 
 (defn handle-code-submit
@@ -174,7 +181,9 @@
         [:input {:type "text"
                  :value @code
                  :on-change #(reset! code (-> % .-target .-value))}]
-        [:button {:type "submit"} "verify"]]])))
+        [:button {:type "submit"
+                  :style {:padding-left 8}}
+         "verify"]]])))
 
 
 (defn LoginPage
@@ -211,10 +220,9 @@
         (rf/dispatch [:set-user user])
         (if current-view
           [current-view route-params query-params]
-          [:div "Page not found."]))
+          [:div "page not found."]))
 
       :else
-      ;; (rt-easy/push-state ::login))))
       [LoginPage])))
 
 
