@@ -6,6 +6,7 @@
                 [cljs-ajax "0.8.4"]
                 [reagent "1.2.0"]
                 [metosin/reitit-frontend "0.7.2"]
+                [metosin/reitit-schema "0.7.2"]
                 [re-frame/re-frame "1.4.3"]]
  :builds       {:app {:target     :browser
                       :output-dir "target/classes/cljsbuild/public/js"

@@ -1,14 +1,14 @@
 (ns zuzhi.chaptify.components.projects
   (:require
-   [clojure.string :as str]
-   [re-frame.core :as rf]
-   [reagent.core :as r]
-   [zuzhi.chaptify.components.togglable :refer [Togglable]]
-   [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
-   [zuzhi.chaptify.db :refer [add-project archive-project delete-project
-                              delete-topic get-projects rename-project
-                              update-topic-status]]
-   [zuzhi.chaptify.util :refer [transform-project]]))
+    [clojure.string :as str]
+    [re-frame.core :as rf]
+    [reagent.core :as r]
+    [zuzhi.chaptify.components.togglable :refer [Togglable]]
+    [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
+    [zuzhi.chaptify.db :refer [add-project archive-project delete-project
+                               delete-topic get-projects rename-project
+                               update-topic-status]]
+    [zuzhi.chaptify.util :refer [transform-project]]))
 
 
 (defn handle-project-submit

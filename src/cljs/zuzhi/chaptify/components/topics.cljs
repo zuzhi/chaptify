@@ -1,8 +1,8 @@
 (ns zuzhi.chaptify.components.topics
   (:require
-   [re-frame.core :as rf]
-   [reagent.core :as r]
-   [zuzhi.chaptify.db :refer [add-sub-topic add-topic delete-topic]]))
+    [re-frame.core :as rf]
+    [reagent.core :as r]
+    [zuzhi.chaptify.db :refer [add-sub-topic add-topic delete-topic]]))
 
 
 (defn handle-topic-submit
