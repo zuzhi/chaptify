@@ -6,7 +6,7 @@
     [zuzhi.chaptify.components.togglable :refer [Togglable]]
     [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
     [zuzhi.chaptify.db :refer [add-project archive-project delete-project
-                               delete-topic get-projects rename-project
+                               delete-topic get-projects rename-project rename-topic
                                update-topic-status]]
     [zuzhi.chaptify.util :refer [transform-project]]))
 
@@ -24,6 +24,14 @@
   (fn [event]
     (.preventDefault event)
     (rename-project id @name)
+    (reset! name "")))
+
+
+(defn handle-edit-topic-submit
+  [id name]
+  (fn [event]
+    (.preventDefault event)
+    (rename-topic id @name)
     (reset! name "")))
 
 
@@ -53,11 +61,28 @@
        [:button {:type "submit" :style {:padding-left 8}} "save"]])))
 
 
+(defn EditTopicForm
+  [{:keys [id name]} input-ref]
+  (let [topic-name (r/atom name)]
+    (fn []
+      [:form {:on-submit (handle-edit-topic-submit id topic-name)}
+       [:input {:type "text"
+                :value @topic-name
+                :ref #(reset! input-ref %)
+                :on-change #(reset! topic-name (-> % .-target .-value))}]
+       [:button {:type "submit" :style {:padding-left 8}} "save"]])))
+
+
 (defn TopicLine
-  [{:keys [id name status children] :as parent} project-id]
-  (let [visibility-ref (r/atom nil)]
+  [{:keys [id name status children] :as topic} project-id]
+  (let [edit-topic-form-visibility-ref (r/atom nil)
+        input-ref (r/atom nil)
+        visibility-ref (r/atom nil)]
     [:li {:key id}
      [:span {:class (str/replace status " " "-")} name]
+     [:button {:style {:padding-left 8}
+               :on-click #(when-let [set-visible (:set-visible @edit-topic-form-visibility-ref)]
+                            (set-visible true))} "rename"]
      [:button {:style {:padding-left 8}
                :on-click #(delete-topic id children)} "delete"]
      [:button {:style {:padding-left 8}
@@ -70,6 +95,10 @@
                :on-click #(update-topic-status id "skip")} "skip"]
      [:button {:style {:padding-left 8}
                :on-click #(update-topic-status id "skim")} "skim"]
+     [Togglable {:ref edit-topic-form-visibility-ref
+                 :on-show #(when @input-ref (.focus @input-ref))}
+      ^{:key "edit-project-form"}
+      [EditTopicForm topic input-ref]]
      [Togglable
       {:buttonLabel "new topic"
        :ref visibility-ref}

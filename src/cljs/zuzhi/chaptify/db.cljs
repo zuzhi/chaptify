@@ -99,6 +99,14 @@
       (.transact db (.update project update-data)))))
 
 
+(defn rename-topic
+  [id name]
+  (let [topic (aget (.-topics tx) id)
+        update-data (clj->js {:name name})]
+    (when topic
+      (.transact db (.update topic update-data)))))
+
+
 (defn delete-topic
   ([topic-id] (delete-topic topic-id []))
   ([topic-id children]
