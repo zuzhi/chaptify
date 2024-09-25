@@ -1,6 +1,7 @@
 (ns zuzhi.chaptify.db
   (:require
-    ["@instantdb/react" :refer [init tx id]]))
+    ["@instantdb/react" :refer [id init tx]]
+    [reagent.core :as r]))
 
 
 ;; ID for app: chaptify
@@ -29,7 +30,6 @@
         project (aget (.-projects tx) project-id)
         link-data (clj->js {:topics id})]
     (when topic
-      (js/console.log update-data)
       (.transact db (.update topic update-data))
       (.transact db (.link project link-data)))))
 
@@ -115,6 +115,56 @@
        (.transact db (.delete topic))
        (doseq [t children]
          (delete-topic (:id t) (:children t)))))))
+
+
+(defn init-project
+  [project topics user-id]
+  (js/console.log "init project")
+  (js/console.log "topics:" topics)
+
+  ;; drop all topics
+  (let [current-topics (:topics project)]
+    (doseq [t current-topics]
+      (delete-topic (:id t))))
+  ;; create new topics by updates and links
+  (let [indent-tracker (r/atom [])
+        project-id (:id project)]
+    (js/console.log "project-id:" project-id)
+    (doseq [t topics]
+      (let [name (:name t)
+            indent (:indent t)]
+        (if (= indent 0)
+          (let [id (id)
+                topic (aget (.-topics tx) id)
+                update-data (clj->js {:name name
+                                      :status "pending"
+                                      :createdAt (.now js/Date)
+                                      :creatorId user-id})
+                update (.update topic update-data)
+                project (aget (.-projects tx) project-id)
+                project-link-data (clj->js {:topics id})
+                project-link (.link project project-link-data)]
+            (.transact db update)
+            (.transact db project-link)
+            (reset! indent-tracker [])
+            (reset! indent-tracker (conj @indent-tracker id)))
+          (let [id (id)
+                topic (aget (.-topics tx) id)
+                update-data (clj->js {:name name
+                                      :status "pending"
+                                      :createdAt (.now js/Date)
+                                      :creatorId user-id})
+                update (.update topic update-data)
+                project (aget (.-projects tx) project-id)
+                project-link-data (clj->js {:topics id})
+                project-link (.link project project-link-data)
+                parent-id (nth @indent-tracker (- indent 1))
+                parent (aget (.-topics tx) parent-id)
+                parent-link-data (clj->js {:children id})]
+            (.transact db update)
+            (.transact db project-link)
+            (.transact db (.link parent parent-link-data))
+            (reset! indent-tracker (assoc @indent-tracker indent id))))))))
 
 
 (defn delete-project

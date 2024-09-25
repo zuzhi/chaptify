@@ -1,8 +1,9 @@
 (ns zuzhi.chaptify.components.projects
   (:require
-    [clojure.string :as str]
+    [clojure.string :as str :refer [join]]
     [re-frame.core :as rf]
     [reagent.core :as r]
+    [zuzhi.chaptify.components.editor :refer [editor]]
     [zuzhi.chaptify.components.togglable :refer [Togglable]]
     [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
     [zuzhi.chaptify.db :refer [add-project archive-project delete-project
@@ -108,8 +109,38 @@
         ^{:key (:id t)} [TopicLine t project-id])]]))
 
 
+(defn build-sub-topics
+  [topic level]
+  (let [children (:children topic)
+        list-items (for [child children]
+                     (str "<li class=\"ql-indent-" level "\">" (:name child) "</li>" (build-sub-topics child (inc level))))
+        list-items-str (join "" list-items)]
+    list-items-str))
+
+
+(defn build-topics
+  [project]
+  (let [transformed (transform-project project)
+        topics (:topics transformed)
+        sorted-topics (sort-by :createdAt < topics)
+        list-items (for [topic sorted-topics]
+                     (str "<li>" (:name topic) "</li>" (build-sub-topics topic 1)))
+        list-items-str (join "" list-items)]
+    (str "<ul>" list-items-str "</ul")))
+
+
+(defn open-in-editor
+  [project editor-form-visibility-ref editor-ref]
+  (when-let [set-visible (:set-visible @editor-form-visibility-ref)]
+    (set-visible true))
+  (when-let [set-value (:set-value @editor-ref)]
+    (set-value (build-topics project)))
+  (when-let [set-project (:set-project @editor-ref)]
+    (set-project project)))
+
+
 (defn ProjectLine
-  [{:keys [id name topics] :as project}]
+  [{:keys [id name topics] :as project} editor-form-visibility-ref editor-ref]
   (let [edit-form-visibility-ref (r/atom nil)
         input-ref (r/atom nil)
         visibility-ref (r/atom nil)
@@ -119,7 +150,8 @@
                                 topics)
         progress (int (* (/ (count finished-topics) (count topics)) 100))
         transformed (transform-project project)
-        direct-topics (:topics transformed)]
+        direct-topics (:topics transformed)
+        sorted-direct-topics (sort-by :createdAt < direct-topics)]
     (fn []
       [:li {:key id}
        [:span.project (str name " " progress "%")]
@@ -130,6 +162,9 @@
                  :on-click #(delete-project project)} "delete"]
        [:button {:style {:padding-left 8}
                  :on-click #(archive-project id)} "archive"]
+       [:button {:style {:padding-left 8}
+                 :on-click #(open-in-editor project editor-form-visibility-ref editor-ref)} "open in editor"]
+
        [Togglable {:ref edit-form-visibility-ref
                    :on-show #(when @input-ref (.focus @input-ref))}
         ^{:key "edit-project-form"}
@@ -138,16 +173,22 @@
                    :ref visibility-ref}
         ^{:key "new-topic-form"} [NewTopicForm id]]
        [:ul
-        (for [t direct-topics]
+        (for [t sorted-direct-topics]
           ^{:key (:id t)} [TopicLine t id])]])))
 
 
 (defn Projects
   [projects]
-  [:ul
-   (for [p projects]
-     (let [project-line (fn [] [ProjectLine p])]
-       ^{:key (:id p)} [project-line]))])
+  (let [visibility-ref (r/atom nil)
+        editor-ref (r/atom nil)]
+    [:div
+     [:ul
+      (for [p projects]
+        (let [project-line (fn [] [ProjectLine p visibility-ref editor-ref])]
+          ^{:key (:id p)} [project-line]))]
+     [Togglable
+      {:ref visibility-ref}
+      ^{:key "editor-form"} [:f> editor {:ref editor-ref}]]]))
 
 
 (defn ProjectsPage

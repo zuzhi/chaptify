@@ -58,8 +58,6 @@
         username (first (str/split user-email #"@"))
         {:keys [path query]} (:parameters match)
         tab (:tab query)]
-    (js/console.log "match:" match)
-    (js/console.log ::profile)
     [:div.header
      [:a.product-name {:href (rtf-easy/href ::home)
                        :class (when (= route-name ::home) "active")}
@@ -153,7 +151,6 @@
         user (rf/subscribe [:user])
         user-email (:email @user)
         current-username (first (str/split user-email #"@"))]
-    (js/console.log "match:" match)
     (if (= username current-username)
       [profile username tab]
       [page-404])))
@@ -239,8 +236,6 @@
         route-data (:data match)
         result (.useAuth db)
         {:keys [isLoading user error]} (js->clj result :keywordize-keys true)]
-    (js/console.log "user:" user)
-    (js/console.log "match:" match)
     (cond
       isLoading
       [:div "loading"]
