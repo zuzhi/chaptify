@@ -78,7 +78,8 @@
   [{:keys [id name status children] :as topic} project-id]
   (let [edit-topic-form-visibility-ref (r/atom nil)
         input-ref (r/atom nil)
-        visibility-ref (r/atom nil)]
+        visibility-ref (r/atom nil)
+        sorted-children (sort-by :createdAt < children)]
     [:li {:key id}
      [:span {:class (str/replace status " " "-")} name]
      [:button {:style {:padding-left 8}
@@ -106,7 +107,7 @@
        :ref visibility-ref}
       ^{:key "new-sub-topic-form"} [NewSubTopicForm id project-id]]
      [:ul
-      (for [t children]
+      (for [t sorted-children]
         ^{:key (:id t)} [TopicLine t project-id])]]))
 
 

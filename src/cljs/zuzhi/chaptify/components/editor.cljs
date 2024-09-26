@@ -55,7 +55,6 @@
                                (handle-editor-save project topics user-id))))}
        [:> ReactQuill
         {:theme "snow"
-         :modules {:toolbar false}
          :value @value
          :on-change set-value}]
        [:button {:type "submit"} "save"]])))
