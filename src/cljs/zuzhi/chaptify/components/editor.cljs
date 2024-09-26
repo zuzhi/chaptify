@@ -51,7 +51,8 @@
       [:form {:on-submit (fn [e]
                            (.preventDefault e)
                            (let [topics (parse-topics @value)]
-                             (handle-editor-save project topics user-id)))}
+                             (when (js/window.confirm (str "(re)initialize " (:name @project) "? status will be lost."))
+                               (handle-editor-save project topics user-id))))}
        [:> ReactQuill
         {:theme "snow"
          :modules {:toolbar false}

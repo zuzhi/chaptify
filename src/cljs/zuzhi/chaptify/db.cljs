@@ -87,7 +87,6 @@
                               :createdAt (.now js/Date)
                               :creatorId user-id})]
     (when project
-      (js/console.log update-data)
       (.transact db (.update project update-data)))))
 
 
@@ -119,9 +118,6 @@
 
 (defn init-project
   [project topics user-id]
-  (js/console.log "init project")
-  (js/console.log "topics:" topics)
-
   ;; drop all topics
   (let [current-topics (:topics project)]
     (doseq [t current-topics]
@@ -129,7 +125,6 @@
   ;; create new topics by updates and links
   (let [indent-tracker (r/atom [])
         project-id (:id project)]
-    (js/console.log "project-id:" project-id)
     (doseq [t topics]
       (let [name (:name t)
             indent (:indent t)]

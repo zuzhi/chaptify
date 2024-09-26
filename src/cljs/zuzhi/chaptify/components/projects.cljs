@@ -85,7 +85,8 @@
                :on-click #(when-let [set-visible (:set-visible @edit-topic-form-visibility-ref)]
                             (set-visible true))} "rename"]
      [:button {:style {:padding-left 8}
-               :on-click #(delete-topic id children)} "delete"]
+               :on-click #(when (js/window.confirm (str "delete " (:name topic) "?"))
+                            (delete-topic id children))} "delete"]
      [:button {:style {:padding-left 8}
                :on-click #(update-topic-status id "pending")} "pending"]
      [:button {:style {:padding-left 8}
@@ -159,7 +160,8 @@
                  :on-click #(when-let [set-visible (:set-visible @edit-form-visibility-ref)]
                               (set-visible true))} "rename"]
        [:button {:style {:padding-left 8}
-                 :on-click #(delete-project project)} "delete"]
+                 :on-click #(when (js/window.confirm (str "delete " (:name project) "?"))
+                              (delete-project project))} "delete"]
        [:button {:style {:padding-left 8}
                  :on-click #(archive-project id)} "archive"]
        [:button {:style {:padding-left 8}
