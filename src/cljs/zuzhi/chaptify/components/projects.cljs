@@ -14,6 +14,9 @@
     [zuzhi.chaptify.util :refer [transform-project]]))
 
 
+(def buttons-visible (r/atom false))
+
+
 (defn NewProjectForm
   []
   (let [project-name (r/atom "")
@@ -60,29 +63,31 @@
         sorted-children (sort-by :createdAt < children)]
     [:li {:key id}
      [:span {:class (str/replace status " " "-")} name]
-     [:button {:style {:padding-left 8}
-               :on-click #(when-let [set-visible (:set-visible @edit-topic-form-visibility-ref)]
-                            (set-visible true))} "rename"]
-     [:button {:style {:padding-left 8}
-               :on-click #(when (js/window.confirm (str "delete " (:name topic) "?"))
-                            (delete-topic id children))} "delete"]
-     [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "pending")} "pending"]
-     [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "in progress")} "in progress"]
-     [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "done")} "done"]
-     [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "skip")} "skip"]
-     [:button {:style {:padding-left 8}
-               :on-click #(update-topic-status id "skim")} "skim"]
+     (when @buttons-visible
+       [:<>
+        [:button {:style {:padding-left 8}
+                  :on-click #(when-let [set-visible (:set-visible @edit-topic-form-visibility-ref)]
+                               (set-visible true))} "rename"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(when (js/window.confirm (str "delete " (:name topic) "?"))
+                               (delete-topic id children))} "delete"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(update-topic-status id "pending")} "pending"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(update-topic-status id "in progress")} "in progress"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(update-topic-status id "done")} "done"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(update-topic-status id "skip")} "skip"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(update-topic-status id "skim")} "skim"]
+        [:button {:style {:padding-left 8}
+                  :on-click #(when-let [set-visible (:set-visible @visibility-ref)]
+                               (set-visible true))} "new topic"]])
      [Togglable {:ref edit-topic-form-visibility-ref
                  :on-show #(when @input-ref (.focus @input-ref))}
-      ^{:key "edit-project-form"}
-      [EditTopicForm topic input-ref]]
-     [Togglable
-      {:buttonLabel "new topic"
-       :ref visibility-ref}
+      ^{:key "edit-project-form"} [EditTopicForm topic input-ref]]
+     [Togglable {:ref visibility-ref}
       ^{:key "new-sub-topic-form"} [NewSubTopicForm id project-id]]
      [:ul
       (for [t sorted-children]
@@ -105,23 +110,25 @@
     (fn []
       [:li {:key id}
        [:span.project (str name " " progress "%")]
-       [:button {:style {:padding-left 8}
-                 :on-click #(when-let [set-visible (:set-visible @edit-form-visibility-ref)]
-                              (set-visible true))} "rename"]
-       [:button {:style {:padding-left 8}
-                 :on-click #(when (js/window.confirm (str "delete " (:name project) "?"))
-                              (delete-project project))} "delete"]
-       [:button {:style {:padding-left 8}
-                 :on-click #(archive-project id)} "archive"]
-       [:button {:style {:padding-left 8}
-                 :on-click #(handle-open-in-editor project editor-form-visibility-ref editor-ref)} "open in editor"]
-
+       (when @buttons-visible
+         [:<>
+          [:button {:style {:padding-left 8}
+                    :on-click #(when-let [set-visible (:set-visible @edit-form-visibility-ref)]
+                                 (set-visible true))} "rename"]
+          [:button {:style {:padding-left 8}
+                    :on-click #(when (js/window.confirm (str "delete " (:name project) "?"))
+                                 (delete-project project))} "delete"]
+          [:button {:style {:padding-left 8}
+                    :on-click #(archive-project id)} "archive"]
+          [:button {:style {:padding-left 8}
+                    :on-click #(handle-open-in-editor project editor-form-visibility-ref editor-ref)} "open in editor"]
+          [:button {:style {:padding-left 8}
+                    :on-click #(when-let [set-visible (:set-visible @visibility-ref)]
+                                 (set-visible true))} "new topic"]])
        [Togglable {:ref edit-form-visibility-ref
                    :on-show #(when @input-ref (.focus @input-ref))}
-        ^{:key "edit-project-form"}
-        [EditProjectForm project input-ref]]
-       [Togglable {:buttonLabel "new topic"
-                   :ref visibility-ref}
+        ^{:key "edit-project-form"} [EditProjectForm project input-ref]]
+       [Togglable {:ref visibility-ref}
         ^{:key "new-topic-form"} [NewTopicForm id]]
        [:ul
         (for [t sorted-direct-topics]
@@ -159,8 +166,11 @@
 
       :else
       [:div {:style {:margin-top 16}}
-       [Togglable
-        {:buttonLabel "new project"
-         :ref visibility-ref}
+       [:button {:on-click #(when-let [set-visible (:set-visible @visibility-ref)]
+                              (set-visible true))} "new project"]
+       [:button {:style {:padding-left 8}
+                 :on-click #(reset! buttons-visible (not @buttons-visible))}
+        (str (if @buttons-visible "hide" "show") " buttons")]
+       [Togglable {:ref visibility-ref}
         ^{:key "new-project-form"} [NewProjectForm]]
        [Projects projects]])))
