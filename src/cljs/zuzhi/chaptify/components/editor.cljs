@@ -3,7 +3,7 @@
     ["react-quill" :as ReactQuill]
     [re-frame.core :as rf]
     [reagent.core :as r]
-    [zuzhi.chaptify.db :refer [init-project]]))
+    [zuzhi.chaptify.events.editor :refer [handle-editor-save]]))
 
 
 (defn indent-level
@@ -28,12 +28,7 @@
       topics)))
 
 
-(defn handle-editor-save
-  [project topics user-id]
-  (init-project @project topics user-id))
-
-
-(defn editor
+(defn Editor
   [{:keys [ref]}]
   (let [value (r/atom "")
         set-value #(reset! value %)
@@ -55,6 +50,8 @@
                                (handle-editor-save project topics user-id))))}
        [:> ReactQuill
         {:theme "snow"
+         :modules {:toolbar [{:list "bullet"}]}
+         :formats ["list" "indent"]
          :value @value
          :on-change set-value}]
        [:button {:type "submit"} "save"]])))

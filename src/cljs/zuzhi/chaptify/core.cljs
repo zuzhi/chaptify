@@ -48,7 +48,7 @@
 (defonce state (r/atom {:match nil}))
 
 
-(defn nav
+(defn Nav
   []
   (let [{:keys [match]} @state
         user (rf/subscribe [:user])
@@ -76,7 +76,7 @@
       "profile"]]))
 
 
-(defn dashboard
+(defn Dashboard
   []
   (let [query {:projects {}}
         result (.useQuery db (clj->js query))
@@ -105,7 +105,7 @@
                (rf/dispatch [:set-user nil])))))
 
 
-(defn footer
+(defn Footer
   []
   (let [user (rf/subscribe [:user])
         user-email (:email @user)
@@ -117,33 +117,33 @@
       "logout"]]))
 
 
-(defn home-page
+(defn HomePage
   []
   [:div
-   [nav]
-   [:f> dashboard]
-   [footer]])
+   [Nav]
+   [:f> Dashboard]
+   [Footer]])
 
 
-(defn profile
+(defn Profile
   [username tab]
   [:div
-   [nav]
+   [Nav]
    (cond
      (= tab "projects") [:f> ProjectsPage]
      (= tab "archives") [:f> ArchivesPage]
      :else [:div [:p "hi, " username]])
-   [footer]])
+   [Footer]])
 
 
-(defn page-404
+(defn Page404
   []
   [:div
    [:p "page not found"]
    [:button {:on-click #(rtf-easy/push-state ::home)} "<- home"]])
 
 
-(defn user-page
+(defn UserPage
   [match]
   (let [{:keys [path query]} (:parameters match)
         {:keys [username]} path
@@ -152,8 +152,8 @@
         user-email (:email @user)
         current-username (first (str/split user-email #"@"))]
     (if (= username current-username)
-      [profile username tab]
-      [page-404])))
+      [Profile username tab]
+      [Page404])))
 
 
 (defn handle-email-submit
@@ -171,7 +171,7 @@
                     (set-sent-email "")))))))
 
 
-(defn email
+(defn Email
   [{:keys [set-sent-email]}]
   (let [email (r/atom "")]
     (fn []
@@ -204,7 +204,7 @@
                   (set-code ""))))))
 
 
-(defn magic-code
+(defn MagicCode
   [{:keys [set-code]} sent-email]
   (let [code (r/atom "")]
     (fn []
@@ -219,18 +219,18 @@
          "verify"]]])))
 
 
-(defn login-view
+(defn LoginView
   []
   (let [sent-email (r/atom "")
         code (r/atom "")]
     (fn []
       [:div
        (if (empty? @sent-email)
-         [email {:set-sent-email #(reset! sent-email %)}]
-         [magic-code {:set-code #(reset! code %)} @sent-email])])))
+         [Email {:set-sent-email #(reset! sent-email %)}]
+         [MagicCode {:set-code #(reset! code %)} @sent-email])])))
 
 
-(defn main-view
+(defn MainView
   []
   (let [{:keys [match]} @state
         route-data (:data match)
@@ -251,17 +251,17 @@
           (if (= view-name ::login)
             (do
               (rtf-easy/push-state ::home)
-              [home-page match])
+              [HomePage match])
             [view match]))
-        [page-404])
+        [Page404])
 
       :else
       (if match
         (let [view (:view route-data)]
           (if (:public? route-data)
             [view match]
-            [login-view]))
-        [login-view]))))
+            [LoginView]))
+        [LoginView]))))
 
 
 ;; -------------------------
@@ -277,14 +277,14 @@
   ["/"
    [""
     {:name ::home
-     :view home-page}]
+     :view HomePage}]
    ["login"
     {:name ::login
-     :view login-view
+     :view LoginView
      :public? true}]
    [":username"
     {:name ::profile
-     :view user-page}]])
+     :view UserPage}]])
 
 
 (def router
@@ -302,7 +302,7 @@
     ;; on-navigate
     (fn [new-match]
       (swap! state (fn [state]
-                     (if new-match
+                     (when new-match
                        ;; Only run the controllers, which are likely to call authenticated APIs,
                        ;; if user has been authenticated.
                        ;; Alternative solution could be to always run controllers,
@@ -321,7 +321,7 @@
 
 (defn ^:dev/after-load mount-root
   []
-  (rdc/render root [:f> main-view]))
+  (rdc/render root [:f> MainView]))
 
 
 (defn ^:export ^:dev/once init!

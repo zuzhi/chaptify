@@ -1,39 +1,17 @@
 (ns zuzhi.chaptify.components.projects
   (:require
-    [clojure.string :as str :refer [join]]
+    [clojure.string :as str]
     [re-frame.core :as rf]
     [reagent.core :as r]
-    [zuzhi.chaptify.components.editor :refer [editor]]
+    [zuzhi.chaptify.components.editor :refer [Editor]]
     [zuzhi.chaptify.components.togglable :refer [Togglable]]
     [zuzhi.chaptify.components.topics :refer [NewSubTopicForm NewTopicForm]]
-    [zuzhi.chaptify.db :refer [add-project archive-project delete-project
-                               delete-topic get-projects rename-project rename-topic
-                               update-topic-status]]
+    [zuzhi.chaptify.db :refer [archive-project delete-project delete-topic
+                               get-projects update-topic-status]]
+    [zuzhi.chaptify.events.projects :refer [handle-edit-submit
+                                            handle-edit-topic-submit handle-project-submit
+                                            handle-open-in-editor]]
     [zuzhi.chaptify.util :refer [transform-project]]))
-
-
-(defn handle-project-submit
-  [name user-id]
-  (fn [event]
-    (.preventDefault event)
-    (add-project @name user-id)
-    (reset! name "")))
-
-
-(defn handle-edit-submit
-  [id name]
-  (fn [event]
-    (.preventDefault event)
-    (rename-project id @name)
-    (reset! name "")))
-
-
-(defn handle-edit-topic-submit
-  [id name]
-  (fn [event]
-    (.preventDefault event)
-    (rename-topic id @name)
-    (reset! name "")))
 
 
 (defn NewProjectForm
@@ -111,36 +89,6 @@
         ^{:key (:id t)} [TopicLine t project-id])]]))
 
 
-(defn build-sub-topics
-  [topic level]
-  (let [children (:children topic)
-        list-items (for [child children]
-                     (str "<li class=\"ql-indent-" level "\">" (:name child) "</li>" (build-sub-topics child (inc level))))
-        list-items-str (join "" list-items)]
-    list-items-str))
-
-
-(defn build-topics
-  [project]
-  (let [transformed (transform-project project)
-        topics (:topics transformed)
-        sorted-topics (sort-by :createdAt < topics)
-        list-items (for [topic sorted-topics]
-                     (str "<li>" (:name topic) "</li>" (build-sub-topics topic 1)))
-        list-items-str (join "" list-items)]
-    (str "<ul>" list-items-str "</ul")))
-
-
-(defn open-in-editor
-  [project editor-form-visibility-ref editor-ref]
-  (when-let [set-visible (:set-visible @editor-form-visibility-ref)]
-    (set-visible true))
-  (when-let [set-value (:set-value @editor-ref)]
-    (set-value (build-topics project)))
-  (when-let [set-project (:set-project @editor-ref)]
-    (set-project project)))
-
-
 (defn ProjectLine
   [{:keys [id name topics] :as project} editor-form-visibility-ref editor-ref]
   (let [edit-form-visibility-ref (r/atom nil)
@@ -166,7 +114,7 @@
        [:button {:style {:padding-left 8}
                  :on-click #(archive-project id)} "archive"]
        [:button {:style {:padding-left 8}
-                 :on-click #(open-in-editor project editor-form-visibility-ref editor-ref)} "open in editor"]
+                 :on-click #(handle-open-in-editor project editor-form-visibility-ref editor-ref)} "open in editor"]
 
        [Togglable {:ref edit-form-visibility-ref
                    :on-show #(when @input-ref (.focus @input-ref))}
@@ -191,7 +139,7 @@
           ^{:key (:id p)} [project-line]))]
      [Togglable
       {:ref visibility-ref}
-      ^{:key "editor-form"} [:f> editor {:ref editor-ref}]]]))
+      ^{:key "editor-form"} [:f> Editor {:ref editor-ref}]]]))
 
 
 (defn ProjectsPage

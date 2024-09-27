@@ -6,7 +6,7 @@
 
 
 (defn TopicLine
-  [{:keys [id name status children] :as parent} project-id]
+  [{:keys [id name status children]} project-id]
   [:li {:key id}
    [:span {:class (str/replace status " " "-")} name]
    [:ul
